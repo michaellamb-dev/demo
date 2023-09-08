@@ -26,4 +26,12 @@ public class ImageController {
         .contentType(MediaType.IMAGE_JPEG)
         .body(imageAgent.exchangeSvgUriForJpeg(svgUri));
     }
+
+    @GetMapping("/svg-to-png")
+    public ResponseEntity<byte[]> getSvgToPng(@RequestParam("svgUri") String svgUri) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(imageAgent.exchangeSvgUriForPng(svgUri));
+    }
+
 }
