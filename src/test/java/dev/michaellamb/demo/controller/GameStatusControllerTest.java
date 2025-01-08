@@ -1,5 +1,6 @@
 package dev.michaellamb.demo.controller;
 
+import dev.michaellamb.demo.TestConstants;
 import dev.michaellamb.demo.agent.GameStatusAgent;
 import dev.michaellamb.demo.model.GameStatusResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,10 +17,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
-class GameStatusControllerTest {
+class GameStatusControllerTest extends BaseControllerTest {
 
     private MockMvc mockMvc;
 
@@ -27,27 +28,66 @@ class GameStatusControllerTest {
     private GameStatusAgent gameStatusAgent;
 
     @InjectMocks
-    private GameStatusController sut;
+    private GameStatusController controller;
 
-    @BeforeEach
-    public void setUpBefore() {
-        mockMvc = MockMvcBuilders.standaloneSetup(sut).build();
+    @Override
+    protected Object getController() {
+        return controller;
     }
 
-    @DisplayName("Get valheim status and return 200 response")
-    @Test
-    void testGetValheimStatus() throws Exception {
+    @BeforeEach
+    public void setUpMockMvc() {
+        super.setUpMockMvc();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+    }
 
-        final String ANY = "ANY";
-        final GameStatusResponse gameStatusResponse = new GameStatusResponse();
+    @Test
+    @DisplayName("Should return game status when server is up")
+    void testGetValheimStatusWhenUp() throws Exception {
+        GameStatusResponse gameStatusResponse = new GameStatusResponse();
         gameStatusResponse.setUp(true);
         when(gameStatusAgent.getValheimInstanceStatus(anyString(), anyString())).thenReturn(gameStatusResponse);
 
         mockMvc.perform(get("/steam/valheim")
-                        .param("address", ANY)
-                        .param("key", ANY))
+                        .param("address", TestConstants.ANY)
+                        .param("key", TestConstants.ANY))
                 .andDo(print())
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.up").value(true));
     }
 
+    @Test
+    @DisplayName("Should return game status when server is down")
+    void testGetValheimStatusWhenDown() throws Exception {
+        GameStatusResponse gameStatusResponse = new GameStatusResponse();
+        gameStatusResponse.setUp(false);
+        when(gameStatusAgent.getValheimInstanceStatus(anyString(), anyString())).thenReturn(gameStatusResponse);
+
+        mockMvc.perform(get("/steam/valheim")
+                        .param("address", TestConstants.ANY)
+                        .param("key", TestConstants.ANY))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.up").value(false));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when address is empty")
+    void testGetValheimStatusWithEmptyAddress() throws Exception {
+        mockMvc.perform(get("/steam/valheim")
+                        .param("address", TestConstants.EMPTY)
+                        .param("key", TestConstants.ANY))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return bad request when key is empty")
+    void testGetValheimStatusWithEmptyKey() throws Exception {
+        mockMvc.perform(get("/steam/valheim")
+                        .param("address", TestConstants.ANY)
+                        .param("key", TestConstants.EMPTY))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
 }

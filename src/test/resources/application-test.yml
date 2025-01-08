@@ -1,0 +1,16 @@
+spring:
+  profiles: test
+
+# Test-specific configuration
+logging:
+  level:
+    dev.michaellamb.demo: DEBUG
+    org.springframework: INFO
+
+# Mock external service endpoints for testing
+services:
+  steam:
+    base-url: http://localhost:${wiremock.server.port}
+  image:
+    conversion:
+      timeout: 5000
